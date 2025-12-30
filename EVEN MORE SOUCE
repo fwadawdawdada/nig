@@ -1,0 +1,35 @@
+_G.BoxEnabled = false
+local boxCache = {}
+
+RunService.RenderStepped:Connect(function()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            if not boxCache[player] then
+                local box = Drawing.new("Square")
+                box.Color = Color3.fromRGB(255, 255, 255)
+                box.Thickness = 1
+                box.Filled = false
+                boxCache[player] = box
+            end
+
+            local char = player.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local box = boxCache[player]
+
+            if _G.BoxEnabled and hrp then
+                local vector, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                if onScreen then
+                    local sizeX = 1000 / vector.Z
+                    local sizeY = 1500 / vector.Z
+                    box.Size = Vector2.new(sizeX, sizeY)
+                    box.Position = Vector2.new(vector.X - sizeX / 2, vector.Y - sizeY / 2)
+                    box.Visible = true
+                else
+                    box.Visible = false
+                end
+            else
+                box.Visible = false
+            end
+        end
+    end
+end)
