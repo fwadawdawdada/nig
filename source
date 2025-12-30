@@ -1,0 +1,4 @@
+local part = Instance.new("NumberValue", game:GetService("Players").LocalPlayer.Backpack["Desert Eagle"].variables)
+part.Parent = game:GetService("Players").LocalPlayer.Backpack["Desert Eagle"].variables
+part.Name = "magazine"
+part.Value = "50000"
