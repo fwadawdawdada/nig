@@ -1,0 +1,35 @@
+_G.TracerEnabled = false
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local tracerCache = {}
+
+RunService.RenderStepped:Connect(function()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            if not tracerCache[player] then
+                local line = Drawing.new("Line")
+                line.Color = Color3.fromRGB(255, 255, 255)
+                line.Thickness = 1
+                tracerCache[player] = line
+            end
+            
+            local char = player.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local tracer = tracerCache[player]
+
+            if _G.TracerEnabled and hrp then
+                local vector, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                if onScreen then
+                    tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                    tracer.To = Vector2.new(vector.X, vector.Y)
+                    tracer.Visible = true
+                else
+                    tracer.Visible = false
+                end
+            else
+                tracer.Visible = false
+            end
+        end
+    end
+end)
