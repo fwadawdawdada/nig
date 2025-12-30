@@ -1,81 +1,57 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local ESP_Enabled = false
+local Box_Enabled = false
 
-local Window = Rayfield:CreateWindow({
-   Name = "Vision Hub",
-   LoadingTitle = "Loading ESP Features...",
-   LoadingSubtitle = "by Gemini",
-   ConfigurationSaving = { Enabled = true, FolderName = "ESP_Config", FileName = "Main" }
+MainTab:CreateToggle({
+   Name = "Tracer ESP",
+   CurrentValue = false,
+   Flag = "TracerToggle",
+   Callback = function(Value)
+      ESP_Enabled = Value
+   end,
 })
 
-local MainTab = Window:CreateTab("Visuals", 4483362458)
-
--- Settings Variables
-local ESP_Settings = {
-    Tracers = false,
-    Boxes = false,
-    Color = Color3.fromRGB(255, 255, 255)
-}
+MainTab:CreateToggle({
+   Name = "Box ESP",
+   CurrentValue = false,
+   Flag = "BoxToggle",
+   Callback = function(Value)
+      Box_Enabled = Value
+   end,
+})
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local Cache = {}
 
--- Function to create drawing objects
 local function createESP(player)
     local tracer = Drawing.new("Line")
     tracer.Visible = false
+    tracer.Color = Color3.fromRGB(255, 255, 255)
     tracer.Thickness = 1
     
     local box = Drawing.new("Square")
     box.Visible = false
+    box.Color = Color3.fromRGB(255, 255, 255)
     box.Thickness = 1
     box.Filled = false
     
     Cache[player] = {Tracer = tracer, Box = box}
 end
 
--- UI Controls
-MainTab:CreateToggle({
-   Name = "Tracer ESP",
-   CurrentValue = false,
-   Callback = function(Value) ESP_Settings.Tracers = Value end,
-})
-
-MainTab:CreateToggle({
-   Name = "Box ESP",
-   CurrentValue = false,
-   Callback = function(Value) ESP_Settings.Boxes = Value end,
-})
-
-MainTab:CreateColorPicker({
-    Name = "ESP Color",
-    Default = Color3.fromRGB(255, 255, 255),
-    Callback = function(Value) ESP_Settings.Color = Value end,
-})
-
--- Main Update Loop
 RunService.RenderStepped:Connect(function()
     for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
+        if player ~= Players.LocalPlayer then
             if not Cache[player] then createESP(player) end
-            
             local esp = Cache[player]
             local char = player.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            local hum = char and char:FindFirstChild("Humanoid")
 
-            if hrp and hum and hum.Health > 0 then
+            if hrp then
                 local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-
                 if onScreen then
-                    -- Update Color
-                    esp.Tracer.Color = ESP_Settings.Color
-                    esp.Box.Color = ESP_Settings.Color
-
                     -- Tracer Logic
-                    if ESP_Settings.Tracers then
+                    if ESP_Enabled then
                         esp.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                         esp.Tracer.To = Vector2.new(pos.X, pos.Y)
                         esp.Tracer.Visible = true
@@ -84,10 +60,9 @@ RunService.RenderStepped:Connect(function()
                     end
 
                     -- Box Logic
-                    if ESP_Settings.Boxes then
-                        local sizeX = 1000 / pos.Z -- Simple scaling based on distance
+                    if Box_Enabled then
+                        local sizeX = 1000 / pos.Z
                         local sizeY = 1500 / pos.Z
-                        
                         esp.Box.Size = Vector2.new(sizeX, sizeY)
                         esp.Box.Position = Vector2.new(pos.X - sizeX / 2, pos.Y - sizeY / 2)
                         esp.Box.Visible = true
@@ -99,20 +74,8 @@ RunService.RenderStepped:Connect(function()
                     esp.Box.Visible = false
                 end
             else
-                if esp then
-                    esp.Tracer.Visible = false
-                    esp.Box.Visible = false
-                end
+                if esp then esp.Tracer.Visible = false esp.Box.Visible = false end
             end
         end
-    end
-end)
-
--- Cleanup
-Players.PlayerRemoving:Connect(function(player)
-    if Cache[player] then
-        Cache[player].Tracer:Remove()
-        Cache[player].Box:Remove()
-        Cache[player] = nil
     end
 end)
