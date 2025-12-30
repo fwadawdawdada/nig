@@ -1,80 +1,34 @@
-local ESP_Enabled = false
-local Box_Enabled = false
-
-MainTab:CreateToggle({
-   Name = "Tracer ESP",
-   CurrentValue = false,
-   Flag = "TracerToggle",
-   Callback = function(Value)
-      ESP_Enabled = Value
-   end,
-})
-
-MainTab:CreateToggle({
-   Name = "Box ESP",
-   CurrentValue = false,
-   Flag = "BoxToggle",
-   Callback = function(Value)
-      Box_Enabled = Value
-   end,
-})
-
+_G.TracerEnabled = false
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Camera = workspace.CurrentCamera
-local Cache = {}
-
-local function createESP(player)
-    local tracer = Drawing.new("Line")
-    tracer.Visible = false
-    tracer.Color = Color3.fromRGB(255, 255, 255)
-    tracer.Thickness = 1
-    
-    local box = Drawing.new("Square")
-    box.Visible = false
-    box.Color = Color3.fromRGB(255, 255, 255)
-    box.Thickness = 1
-    box.Filled = false
-    
-    Cache[player] = {Tracer = tracer, Box = box}
-end
+local tracerCache = {}
 
 RunService.RenderStepped:Connect(function()
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= Players.LocalPlayer then
-            if not Cache[player] then createESP(player) end
-            local esp = Cache[player]
+            if not tracerCache[player] then
+                local line = Drawing.new("Line")
+                line.Color = Color3.fromRGB(255, 255, 255)
+                line.Thickness = 1
+                tracerCache[player] = line
+            end
+            
             local char = player.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local tracer = tracerCache[player]
 
-            if hrp then
-                local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+            if _G.TracerEnabled and hrp then
+                local vector, onScreen = Camera:WorldToViewportPoint(hrp.Position)
                 if onScreen then
-                    -- Tracer Logic
-                    if ESP_Enabled then
-                        esp.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-                        esp.Tracer.To = Vector2.new(pos.X, pos.Y)
-                        esp.Tracer.Visible = true
-                    else
-                        esp.Tracer.Visible = false
-                    end
-
-                    -- Box Logic
-                    if Box_Enabled then
-                        local sizeX = 1000 / pos.Z
-                        local sizeY = 1500 / pos.Z
-                        esp.Box.Size = Vector2.new(sizeX, sizeY)
-                        esp.Box.Position = Vector2.new(pos.X - sizeX / 2, pos.Y - sizeY / 2)
-                        esp.Box.Visible = true
-                    else
-                        esp.Box.Visible = false
-                    end
+                    tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                    tracer.To = Vector2.new(vector.X, vector.Y)
+                    tracer.Visible = true
                 else
-                    esp.Tracer.Visible = false
-                    esp.Box.Visible = false
+                    tracer.Visible = false
                 end
             else
-                if esp then esp.Tracer.Visible = false esp.Box.Visible = false end
+                tracer.Visible = false
             end
         end
     end
